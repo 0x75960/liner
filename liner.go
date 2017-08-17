@@ -59,10 +59,10 @@ func NewLineProcessor(handler func(string) error, strategy ErrStrategy) func(io.
 				continue
 
 			case LogWhenError:
-				log.Println(err)
+				log.Printf("got error \"%s\" in processing trailing line.\n%s\ncontinue processing.", err, line)
 
 			case StopWhenError:
-				log.Fatalln(err)
+				log.Fatalf("got error \"%s\" in processing trailing line.\n%s\nstop processing.", err, line)
 
 			default:
 				log.Println(err)
