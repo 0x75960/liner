@@ -20,8 +20,8 @@ const (
 	StopWhenError
 )
 
-// NewLineEnumerater from io.Reader
-func NewLineEnumerater(r io.Reader) (o chan string) {
+// LinesIn from io.Reader
+func LinesIn(r io.Reader) (o chan string) {
 
 	o = make(chan string)
 
@@ -45,7 +45,7 @@ func NewLineProcessor(handler func(string) error, strategy ErrStrategy) func(io.
 
 	return func(in io.Reader) {
 
-		for line := range NewLineEnumerater(in) {
+		for line := range LinesIn(in) {
 
 			err := handler(line)
 
