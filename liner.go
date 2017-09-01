@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"log"
+	"sync"
 )
 
 // ErrStrategy when encounting error
@@ -72,4 +73,51 @@ func NewLineProcessor(handler func(string) error, strategy ErrStrategy) func(io.
 
 	}
 
+}
+
+// NewConcurrentLineProcessor from handler and strategy
+func NewConcurrentLineProcessor(handler func(string) error, concurrency int, strategy ErrStrategy) func(io.Reader) {
+
+	return func(in io.Reader) {
+
+		var wg sync.WaitGroup
+		semaphore := make(chan bool, concurrency)
+
+		for l := range LinesIn(in) {
+
+			wg.Add(1)
+			semaphore <- true
+
+			go func(line string) {
+
+				defer func() {
+					wg.Done()
+					<-semaphore
+				}()
+
+				err := handler(line)
+
+				if err == nil {
+					// when no error
+					return
+				}
+
+				switch strategy {
+				case IgnoreWhenError:
+					return
+
+				case LogWhenError:
+					log.Printf("got error \"%s\" in processing trailing line.\n%s\ncontinue processing.", err, line)
+
+				case StopWhenError:
+					log.Fatalf("got error \"%s\" in processing trailing line.\n%s\nstop processing.", err, line)
+
+				default:
+					log.Println(err)
+				}
+
+			}(l)
+		}
+		wg.Wait()
+	}
 }
