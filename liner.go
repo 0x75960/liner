@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"io"
 	"log"
-	"sync"
+
+	"github.com/0x75960/lmttr"
 )
 
 // ErrStrategy when encounting error
@@ -76,24 +77,19 @@ func NewLineProcessor(handler func(string) error, strategy ErrStrategy) func(io.
 }
 
 // NewConcurrentLineProcessor from handler and strategy
-func NewConcurrentLineProcessor(handler func(string) error, concurrency int, strategy ErrStrategy) func(io.Reader) {
+func NewConcurrentLineProcessor(handler func(string) error, concurrency uint, strategy ErrStrategy) func(io.Reader) {
 
 	return func(in io.Reader) {
 
-		var wg sync.WaitGroup
-		semaphore := make(chan bool, concurrency)
+		lmt, _ := lmttr.NewLimitter(concurrency)
 
 		for l := range LinesIn(in) {
 
-			wg.Add(1)
-			semaphore <- true
+			lmt.Start()
 
 			go func(line string) {
 
-				defer func() {
-					wg.Done()
-					<-semaphore
-				}()
+				defer lmt.End()
 
 				err := handler(line)
 
@@ -118,6 +114,7 @@ func NewConcurrentLineProcessor(handler func(string) error, concurrency int, str
 
 			}(l)
 		}
-		wg.Wait()
+
+		lmt.Wait()
 	}
 }
