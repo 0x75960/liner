@@ -2,6 +2,7 @@ package liner
 
 import (
 	"bytes"
+	"os/exec"
 	"testing"
 )
 
@@ -28,6 +29,17 @@ func TestLinesIn(t *testing.T) {
 		t.Fatalf("expected [a, b, c], but got %s", res)
 	}
 
+}
+
+func TestLinesInProcessing(t *testing.T) {
+	lines, err := LinesInProcessing(exec.Command("ping", "127.0.0.1"))
+	if err != nil {
+		t.Fatal("error occurred", err)
+	}
+
+	for line := range lines {
+		t.Logf("got: %s\n", line)
+	}
 }
 
 func TestNewLineProcessor(t *testing.T) {

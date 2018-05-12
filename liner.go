@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"log"
+	"os/exec"
 
 	"github.com/0x75960/lmttr"
 )
@@ -34,6 +35,37 @@ func LinesIn(r io.Reader) (o chan string) {
 		for s.Scan() {
 			o <- s.Text()
 		}
+
+		close(o)
+
+	}(scanner)
+
+	return
+}
+
+// LinesInProcessing Command
+func LinesInProcessing(cmd *exec.Cmd) (o chan string, err error) {
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	o = make(chan string)
+
+	scanner := bufio.NewScanner(stdout)
+
+	go func(s *bufio.Scanner) {
+
+		for s.Scan() {
+			o <- s.Text()
+		}
+
+		_ = cmd.Wait()
 
 		close(o)
 
