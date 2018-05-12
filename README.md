@@ -20,19 +20,16 @@ import (
 
 func main() {
 
-	handler := func(line string) (err error) {
-		fmt.Println(line)
-		return
-	}
-
-	proc := liner.NewLineProcessor(handler, liner.LogWhenError)
-
 	f, err := os.Open("/path/to/files")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	defer f.Close()
+
+	for line := range liner.LinesIn(f) {
+		fmt.Println(line)
+	}
 
 	proc(f)
 
